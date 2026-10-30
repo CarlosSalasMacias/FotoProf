@@ -4,29 +4,66 @@ import { buildPrompt, sanitizeOptions } from '../promptBuilder';
 // Modelo de imagen de Gemini. Cámbialo aquí si Google lo retira o renombra.
 export const MODEL = 'gemini-3.1-flash-image';
 
+/** Error con mensaje para el usuario y el detalle técnico que devolvió Google. */
+export class GeminiError extends Error {
+  constructor(
+    message: string,
+    public detail?: string,
+    /** La clave está en el nivel gratuito, que no incluye generación de imágenes. */
+    public needsBilling = false,
+  ) {
+    super(message);
+    this.name = 'GeminiError';
+  }
+}
+
+/** Extrae el texto útil del error de Google (suele venir como JSON dentro del mensaje). */
+function extractDetail(raw: string): string {
+  const match = raw.match(/"message"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+  const text = match ? match[1].replace(/\\n/g, ' ').replace(/\\"/g, '"') : raw;
+  return text.length > 600 ? text.slice(0, 600) + '…' : text;
+}
+
 /** Traduce los errores de la API de Gemini a mensajes comprensibles. */
-function toUserMessage(error: unknown): string {
+function toGeminiError(error: unknown): GeminiError {
   const status = (error as { status?: number })?.status;
   const raw = error instanceof Error ? error.message : String(error);
-  if (status === 429 || /quota|rate limit|RESOURCE_EXHAUSTED/i.test(raw)) {
-    return 'Se alcanzó el límite de uso de tu clave de Gemini. Espera un momento o revisa tu cuota en Google AI Studio.';
+  const detail = extractDetail(raw);
+
+  if (status === 429 || /RESOURCE_EXHAUSTED|quota/i.test(raw)) {
+    // "limit: 0" = el modelo no tiene cuota gratuita: esperar no sirve, hace falta facturación.
+    if (/limit:\s*0\b|free_tier|FreeTier/i.test(raw)) {
+      return new GeminiError(
+        'Tu clave está en el nivel gratuito de Google, que no incluye la generación de imágenes. Para usar esta app tienes que activar la facturación en tu proyecto de Google AI Studio.',
+        detail,
+        true,
+      );
+    }
+    return new GeminiError(
+      'Has hecho demasiadas solicitudes seguidas o se agotó tu cuota. Espera un minuto y vuelve a intentarlo.',
+      detail,
+    );
   }
   if (status === 400 && /api key|API_KEY/i.test(raw)) {
-    return 'La clave de API no es válida. Revísala en el apartado "Clave de Gemini".';
+    return new GeminiError('La clave de API no es válida. Revísala en el apartado "Clave de Gemini".', detail);
   }
   if (status === 401 || status === 403) {
-    return 'Tu clave de API no tiene permiso para usar este modelo. Comprueba que la facturación o el acceso estén activos en Google AI Studio.';
+    return new GeminiError(
+      'Tu clave de API no tiene permiso para usar este modelo. Comprueba que la facturación esté activa en Google AI Studio.',
+      detail,
+      true,
+    );
   }
   if (status === 404) {
-    return `El modelo "${MODEL}" ya no está disponible. Hay que actualizar la app con un modelo vigente.`;
+    return new GeminiError(`El modelo "${MODEL}" ya no está disponible. Hay que actualizar la app con un modelo vigente.`, detail);
   }
   if (status === 500 || status === 503) {
-    return 'El servicio de Gemini está saturado. Inténtalo de nuevo en unos segundos.';
+    return new GeminiError('El servicio de Gemini está saturado. Inténtalo de nuevo en unos segundos.', detail);
   }
   if (/Failed to fetch|NetworkError|network/i.test(raw)) {
-    return 'No se pudo conectar con Gemini. Revisa tu conexión a internet.';
+    return new GeminiError('No se pudo conectar con Gemini. Revisa tu conexión a internet.', detail);
   }
-  return 'Ocurrió un error inesperado al generar la imagen. Inténtalo de nuevo.';
+  return new GeminiError('Ocurrió un error inesperado al generar la imagen. Inténtalo de nuevo.', detail);
 }
 
 /**
@@ -64,7 +101,7 @@ export async function generateHeadshot(
   } catch (error) {
     if (signal?.aborted) throw new DOMException('Cancelado', 'AbortError');
     console.error('Error de la API de Gemini:', error);
-    throw new Error(toUserMessage(error));
+    throw toGeminiError(error);
   }
 
   if (response.promptFeedback?.blockReason) {

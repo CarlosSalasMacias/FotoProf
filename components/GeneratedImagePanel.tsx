@@ -1,10 +1,11 @@
 import React, { useCallback } from 'react';
 import { Loader } from './Loader';
+import type { GeminiError } from '../services/geminiService';
 
 interface GeneratedImagePanelProps {
   generatedImage: string | null;
   isLoading: boolean;
-  error: string | null;
+  error: GeminiError | null;
   onRegenerate: () => void;
   /** Móvil/tablet con menú nativo de compartir (permite "Guardar imagen" en la galería). */
   canShareFiles: boolean;
@@ -58,7 +59,37 @@ export const GeneratedImagePanel: React.FC<GeneratedImagePanelProps> = ({ genera
       {error && (
         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md" role="alert">
           <p className="font-bold">Error</p>
-          <p>{error}</p>
+          <p>{error.message}</p>
+          {error.needsBilling && (
+            <div className="mt-3 text-sm text-red-800 space-y-1">
+              <p className="font-semibold">Cómo activarla:</p>
+              <ol className="list-decimal pl-5 space-y-1">
+                <li>
+                  Abre{' '}
+                  <a
+                    href="https://aistudio.google.com/apikey"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline font-medium"
+                  >
+                    Google AI Studio → API Keys
+                  </a>
+                  .
+                </li>
+                <li>
+                  Junto a tu clave o proyecto pulsa <strong>«Set up billing»</strong> (Configurar facturación) y añade
+                  una tarjeta. Pagarás solo por las imágenes que generes.
+                </li>
+                <li>Espera unos minutos a que se active y vuelve a pulsar «Generar retrato». No hace falta cambiar la clave.</li>
+              </ol>
+            </div>
+          )}
+          {error.detail && (
+            <details className="mt-3 text-xs text-red-800/80">
+              <summary className="cursor-pointer select-none">Detalle técnico de Google</summary>
+              <p className="mt-1 break-words font-mono">{error.detail}</p>
+            </details>
+          )}
         </div>
       )}
       <div className="bg-white p-3 sm:p-4 rounded-lg shadow-lg w-full">

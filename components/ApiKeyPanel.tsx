@@ -51,7 +51,9 @@ export const ApiKeyPanel: React.FC<ApiKeyPanelProps> = ({ apiKey, onSave }) => {
         <h2 className="text-lg font-semibold">Clave de Gemini</h2>
         <p className="text-sm text-gray-600 mt-1">
           Los retratos los crea la IA de Google (Gemini). Para usarla necesitas una <strong>clave de API</strong>:
-          un código personal que identifica tu cuenta de Google. Crearla es gratis y solo tienes que hacerlo una vez.
+          un código personal que identifica tu cuenta de Google. Crear la clave es gratis, pero{' '}
+          <strong>Google cobra la generación de imágenes</strong>: necesitas activar la facturación en tu proyecto
+          (pagas solo por las imágenes que generes).
         </p>
       </div>
 
@@ -77,6 +79,10 @@ export const ApiKeyPanel: React.FC<ApiKeyPanelProps> = ({ apiKey, onSave }) => {
             Pulsa <strong>«Create API key»</strong> (Crear clave de API). Si te lo pide, elige o crea un proyecto.
           </li>
           <li>
+            Activa la facturación: junto a tu clave pulsa <strong>«Set up billing»</strong> (Configurar facturación) y
+            añade una tarjeta. Sin este paso Google rechaza todas las imágenes con un error de cuota.
+          </li>
+          <li>
             Copia la clave que aparece. Empieza por <code className="rounded bg-white px-1">AIza</code>.
           </li>
           <li>
@@ -89,8 +95,8 @@ export const ApiKeyPanel: React.FC<ApiKeyPanelProps> = ({ apiKey, onSave }) => {
         <ul className="mt-2 space-y-1 border-t border-brand-secondary/20 pt-2 text-xs text-gray-600">
           <li>🔒 La clave se guarda solo en este navegador y solo se envía a Google. No la compartas con nadie.</li>
           <li>
-            💳 Si al generar aparece un error de cuota o de permisos, quizá tengas que activar la facturación de tu
-            proyecto en Google AI Studio.
+            💳 Puedes ver tu gasto y poner límites en Google AI Studio. La facturación puede tardar unos minutos en
+            activarse.
           </li>
         </ul>
       </details>

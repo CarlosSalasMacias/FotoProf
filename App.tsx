@@ -4,7 +4,7 @@ import { OriginalImagePanel } from './components/OriginalImagePanel';
 import { GeneratedImagePanel } from './components/GeneratedImagePanel';
 import { Header } from './components/Header';
 import { ApiKeyPanel } from './components/ApiKeyPanel';
-import { generateHeadshot } from './services/geminiService';
+import { generateHeadshot, GeminiError } from './services/geminiService';
 import { prepareImage, type PreparedImage } from './utils/image';
 import { loadApiKey, saveApiKey } from './utils/storage';
 import { useDevice } from './hooks/useDevice';
@@ -20,7 +20,7 @@ const App: React.FC = () => {
   const [isPreparing, setIsPreparing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [generationError, setGenerationError] = useState<GeminiError | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
 
@@ -50,7 +50,7 @@ const App: React.FC = () => {
 
   const handleSubmit = useCallback(async () => {
     if (!apiKey) {
-      setGenerationError('Primero guarda tu clave de Gemini (arriba).');
+      setGenerationError(new GeminiError('Primero guarda tu clave de Gemini (arriba).'));
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
@@ -75,7 +75,11 @@ const App: React.FC = () => {
       setGeneratedImage(result);
     } catch (err) {
       if ((err as Error).name === 'AbortError') return;
-      setGenerationError(err instanceof Error ? err.message : 'Ocurrió un error inesperado al generar la imagen.');
+      setGenerationError(
+        err instanceof GeminiError
+          ? err
+          : new GeminiError(err instanceof Error ? err.message : 'Ocurrió un error inesperado al generar la imagen.'),
+      );
     } finally {
       if (abortRef.current === controller) {
         abortRef.current = null;
