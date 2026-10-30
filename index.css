@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-primary: #0D47A1;
+  --color-brand-secondary: #1976D2;
+  --color-brand-light: #E3F2FD;
+  --color-neutral-light: #f8fafc;
+  --color-neutral-medium: #e2e8f0;
+  --color-neutral-dark: #334155;
+}
+
+@layer base {
+  button:not(:disabled),
+  [role="button"] {
+    cursor: pointer;
+  }
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background-color: var(--color-neutral-light);
+  overscroll-behavior-y: none;
+}

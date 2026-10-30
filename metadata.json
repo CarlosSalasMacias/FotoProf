@@ -1,0 +1,10 @@
+{
+  "name": "Generador de Retratos Profesionales IA",
+  "description": "Una aplicación para generar retratos profesionales de alta calidad a partir de una foto, personalizando el traje, fondo y otros detalles con IA.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
